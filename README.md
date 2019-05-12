@@ -8,3 +8,7 @@ This small script does one simple thing: Creates a "dumb" backup of "smart" MySQ
 - No Triggers
 
 Then you can easily export / dump that version and upload somewhere else for people do all sorts of READ ONLY number crunching and data analysis.
+
+# Usage
+
+Copy in to your MySQL editor of choice (like Workbench), change the names of the in and out (master backup) databases, and run the puppy.
