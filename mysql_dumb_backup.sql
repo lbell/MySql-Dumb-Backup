@@ -4,7 +4,7 @@ Author: LBell
 Version: 1.0
 Lisence: MIT
 
-This script creates a "dumb" backup of your [current?] database. What do I mean
+This script creates a "dumb" backup of your given database. What do I mean
 by dumb? This:
     - No auto-increment unique keys (those are copied as just plain INTs)
     - No Foreign Key constraints
