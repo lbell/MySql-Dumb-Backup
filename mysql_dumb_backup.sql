@@ -1,4 +1,16 @@
 /*
+Edit the values below:
+MASTER_DB -- original database you want copied
+BACKUP_DB -- target database (does not need to exist)
+*/
+SET @MASTER_DB = 'my_original_db';
+SET @BACKUP_DB = 'my_dumb_db';
+
+----------------------------------
+-- DO NOT EDIT BELOW THIS POINT --
+----------------------------------
+
+/*
 Title: My Sql Dumb Backup Script
 Author: LBell
 Version: 1.0
@@ -24,17 +36,6 @@ do a database dump, and import it to that shared server.
 Enjoy.
 */
 
-
-/*
-Edit these values for the master database (that which you want copied) and the
-backup database (the name of the database where you want to be output)
-*/
-SET @MASTER_DB = 'my_original_db';
-SET @BACKUP_DB = 'my_dumb_db';
-
-----------------------------------
--- DO NOT EDIT BELOW THIS POINT --
-----------------------------------
 DELIMITER $$
 
 /*
