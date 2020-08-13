@@ -6,6 +6,10 @@ BACKUP_DB -- target database (does not need to exist)
 SET @MASTER_DB = 'my_original_db';
 SET @BACKUP_DB = 'my_dumb_db';
 
+-- If you need to remove some restrictions to allow for legacy data, etc., do so here:
+-- Note: your original SQL_MODE will be restored after this script is run.
+SET @TEMP_SQL_MODE = 'ALLOW_INVALID_DATES';
+
 ----------------------------------
 -- DO NOT EDIT BELOW THIS POINT --
 ----------------------------------
@@ -60,43 +64,48 @@ CREATE PROCEDURE `dumb_structure_export`(
     IN backup_db TEXT
 )
 BEGIN
-    DECLARE my_total INT DEFAULT NULL;
-    DECLARE my_counter INT DEFAULT 0;
-    DECLARE my_curr_table TEXT DEFAULT NULL;
+  DECLARE my_total INT DEFAULT NULL;
+  DECLARE my_counter INT DEFAULT 0;
+  DECLARE my_curr_table TEXT DEFAULT NULL;
 
-    DECLARE table_cursor CURSOR FOR    
-        SELECT TABLE_NAME 
-        FROM information_schema.tables ist 
-        WHERE ist.table_schema = master_db;
+  DECLARE table_cursor CURSOR FOR    
+      SELECT TABLE_NAME 
+      FROM information_schema.tables ist 
+      WHERE ist.table_schema = master_db;
 
-    OPEN table_cursor;
+  OPEN table_cursor;
 
-    SELECT FOUND_ROWS() INTO my_total;
+  SELECT FOUND_ROWS() INTO my_total;
 
-    table_cursor_loop: LOOP
-        SET my_curr_table = NULL;
+  table_cursor_loop: LOOP
+    SET my_curr_table = NULL;
 
-        IF my_counter >= my_total THEN
-            CLOSE table_cursor;
-            LEAVE table_cursor_loop;
-        END IF;
+    IF my_counter >= my_total THEN
+      CLOSE table_cursor;
+      LEAVE table_cursor_loop;
+    END IF;
 
-        FETCH table_cursor INTO my_curr_table;
-            SET my_counter = my_counter + 1;
-            CALL ex_q(
-                CONCAT(
-                    'CREATE TABLE ', backup_db, '.', my_curr_table,
-                    ' SELECT * FROM ', master_db, '.', my_curr_table
-                )
-            );
-    END LOOP;
-
+    FETCH table_cursor INTO my_curr_table;
+    SET my_counter = my_counter + 1;
+    
+    CALL ex_q(
+      CONCAT(
+        'CREATE TABLE `', backup_db, '`.`', my_curr_table,
+        '` SELECT * FROM `', master_db, '`.`', my_curr_table, '`'
+      )
+    );
+  END LOOP;
+    
 END $$
 
 DELIMITER ;
 
+-- Fix default date issue introduced with upgrades
+SET @ORIG_SQL_MODE = (SELECT @@sql_mode);
+SET SQL_MODE = @TEMP_SQL_MODE;
 -- Drop and create the backup Database
 CALL ex_q(CONCAT('DROP DATABASE IF EXISTS ', @BACKUP_DB));
 CALL ex_q(CONCAT('CREATE DATABASE ', @BACKUP_DB));
 -- Copy the master into the dumb backup
 CALL dumb_structure_export(@MASTER_DB, @BACKUP_DB);
+SET SQL_MODE = @ORIG_SQL_MODE; 
