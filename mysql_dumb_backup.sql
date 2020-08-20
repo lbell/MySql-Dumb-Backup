@@ -3,8 +3,8 @@ Edit the values below:
 MASTER_DB -- original database you want copied
 BACKUP_DB -- target database (does not need to exist)
 */
-SET @MASTER_DB = 'my_original_db';
-SET @BACKUP_DB = 'my_dumb_db';
+SET @MASTER_DB = 'gppheno';
+SET @BACKUP_DB = 'gppheno_dumb_copy';
 
 -- If you need to remove some restrictions to allow for legacy data, etc., do so here:
 -- Note: your original SQL_MODE will be restored after this script is run.
@@ -100,12 +100,12 @@ END $$
 
 DELIMITER ;
 
--- Fix default date issue introduced with upgrades
-SET @ORIG_SQL_MODE = (SELECT @@sql_mode);
-SET SQL_MODE = @TEMP_SQL_MODE;
+SET @ORIG_SQL_MODE = (SELECT @@GLOBAL.sql_mode);
+SET @@GLOBAL.sql_mode = @TEMP_SQL_MODE;
 -- Drop and create the backup Database
 CALL ex_q(CONCAT('DROP DATABASE IF EXISTS ', @BACKUP_DB));
 CALL ex_q(CONCAT('CREATE DATABASE ', @BACKUP_DB));
 -- Copy the master into the dumb backup
 CALL dumb_structure_export(@MASTER_DB, @BACKUP_DB);
-SET SQL_MODE = @ORIG_SQL_MODE; 
+-- SET SQL_MODE = @ORIG_SQL_MODE; 
+SET @@GLOBAL.sql_mode = @ORIG_SQL_MODE;
