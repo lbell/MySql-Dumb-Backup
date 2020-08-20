@@ -3,8 +3,8 @@ Edit the values below:
 MASTER_DB -- original database you want copied
 BACKUP_DB -- target database (does not need to exist)
 */
-SET @MASTER_DB = 'gppheno';
-SET @BACKUP_DB = 'gppheno_dumb_copy';
+SET @MASTER_DB = 'origin_db';
+SET @BACKUP_DB = 'destination_db';
 
 -- If you need to remove some restrictions to allow for legacy data, etc., do so here:
 -- Note: your original SQL_MODE will be restored after this script is run.
@@ -71,8 +71,9 @@ BEGIN
   DECLARE table_cursor CURSOR FOR    
       SELECT TABLE_NAME 
       FROM information_schema.tables ist 
-      WHERE ist.table_schema = master_db;
-
+      WHERE ist.TABLE_SCHEMA = master_db
+      AND ist.TABLE_TYPE = 'BASE TABLE';
+      
   OPEN table_cursor;
 
   SELECT FOUND_ROWS() INTO my_total;
@@ -100,12 +101,14 @@ END $$
 
 DELIMITER ;
 
-SET @ORIG_SQL_MODE = (SELECT @@GLOBAL.sql_mode);
+
+SET @ORIG_GLOBAL_MODE = (SELECT @@GLOBAL.sql_mode);
+SET @ORIG_SESSION_MODE = (SELECT @@SESSION.sql_mode);
+
 SET @@GLOBAL.sql_mode = @TEMP_SQL_MODE;
--- Drop and create the backup Database
+SET @@SESSION.sql_mode = @TEMP_SQL_MODE;
 CALL ex_q(CONCAT('DROP DATABASE IF EXISTS ', @BACKUP_DB));
 CALL ex_q(CONCAT('CREATE DATABASE ', @BACKUP_DB));
--- Copy the master into the dumb backup
 CALL dumb_structure_export(@MASTER_DB, @BACKUP_DB);
--- SET SQL_MODE = @ORIG_SQL_MODE; 
-SET @@GLOBAL.sql_mode = @ORIG_SQL_MODE;
+SET @@GLOBAL.sql_mode = @ORIG_GLOBAL_MODE;
+SET @@SESSION.sql_mode = @ORIG_SESSION_MODE;
